@@ -2387,18 +2387,35 @@
                 });
             }
             
-            // Check for journal names without italics
-            if (footnoteText.match(/\d+\s([A-Z][A-Za-z\.]+\sL\.\sRev\.)\s\d+/) && 
-                !footnoteText.match(/\d+\s\*([A-Z][A-Za-z\.]+\sL\.\sRev\.)\*\s\d+/)) {
-                issues.push({
-                    ruleId: "journal_name_format",
-                    description: "Journal names should be in italics",
-                    suggested: footnoteText.replace(
-                        /(\d+)\s([A-Z][A-Za-z\.]+\sL\.\sRev\.)(\s\d+)/,
-                        "$1 *$2*$3"
-                    )
-                });
-            }
+            // Check for journal names without italics or small caps
+            if (footnoteText.match(/\d+\s([A-Z][A-Za-z\.]+\sL\.\sRev\.)\s\d+/)) {
+                // Check if this appears to be a consecutively paginated journal (no month/season)
+                if (!footnoteText.match(/Jan\.|Feb\.|Mar\.|Apr\.|May|Jun\.|Jul\.|Aug\.|Sep\.|Oct\.|Nov\.|Dec\.|Spring|Summer|Fall|Winter/)) {
+                    // Should be small caps
+                    if (!footnoteText.match(/\d+\s([A-Z\.]+\s[A-Z\.]+\s[A-Z\.]+)\s\d+/)) {
+                        issues.push({
+                            ruleId: "journal_name_format",
+                            description: "Consecutively paginated journal names should be in small caps",
+                            suggested: footnoteText.replace(
+                                /(\d+)\s([A-Z][A-Za-z\.]+\sL\.\sRev\.)(\s\d+)/,
+                                "$1 $2$3 (use small caps for the journal name)"
+                            )
+                        });
+                    }
+    } else {
+        // Non-consecutively paginated journal - should be italicized
+        if (!footnoteText.match(/\d+\s\*([A-Z][A-Za-z\.]+\sL\.\sRev\.)\*\s\d+/)) {
+            issues.push({
+                ruleId: "journal_name_format",
+                description: "Non-consecutively paginated journal names should be italicized",
+                suggested: footnoteText.replace(
+                    /(\d+)\s([A-Z][A-Za-z\.]+\sL\.\sRev\.)(\s\d+)/,
+                    "$1 *$2*$3"
+                )
+            });
+        }
+    }
+}
             
             // Check for signals without comma
             if (footnoteText.match(/\b(See|Accord|Cf\.|Compare|E\.g\.|But see)\s[A-Z]/) && 
