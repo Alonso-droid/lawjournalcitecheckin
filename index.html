@@ -736,7 +736,7 @@
                     <button class="quick-source-button" data-source="courtlistener">CourtListener</button>
                     <button class="quick-source-button" data-source="googlescholar">Google Scholar</button>
                     <button class="quick-source-button" data-source="lawcornell">Cornell LII</button>
-                    <button class="quick-source-button" data-source="harvard">Harvard Library</button>
+                    <button class="quick-source-button" data-source="bing">Bing Search</button>
                 </div>
                 
                 <div id="source-content">
@@ -1148,35 +1148,35 @@
                 });
             });
             
-            // Quick source buttons
-            document.querySelectorAll('.quick-source-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    if (!currentSource) {
-                        showToast('Please select a source from a footnote first.');
-                        return;
-                    }
-                    
-                    const sourceType = this.getAttribute('data-source');
-                    const query = currentSource.searchQuery;
-                    
-                    // Open the source in a new tab
-                    switch(sourceType) {
-                        case 'courtlistener':
-                            window.open(`https://www.courtlistener.com/opinion/?q=${encodeURIComponent(query)}`, '_blank');
-                            break;
-                        case 'googlescholar':
-                            window.open(`https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`, '_blank');
-                            break;
-                        case 'lawcornell':
-                            window.open(`https://www.law.cornell.edu/search/site/${encodeURIComponent(query)}`, '_blank');
-                            break;
-                        case 'harvard':
-                            window.open(`https://hollis.harvard.edu/primo-explore/search?query=any,contains,${encodeURIComponent(query)}`, '_blank');
-                            break;
-                    }
-                });
+          // Quick source buttons
+        document.querySelectorAll('.quick-source-button').forEach(button => {
+            button.addEventListener('click', function() {
+                if (!currentSource) {
+                    showToast('Please select a source from a footnote first.');
+                    return;
+                }
+                
+                const sourceType = this.getAttribute('data-source');
+                const query = currentSource.searchQuery;
+                
+                // Open the source in a new tab
+                switch(sourceType) {
+                    case 'courtlistener':
+                        window.open(`https://www.courtlistener.com/opinion/?q=${encodeURIComponent(query)}`, '_blank');
+                        break;
+                    case 'googlescholar':
+                        window.open(`https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`, '_blank');
+                        break;
+                    case 'lawcornell':
+                        window.open(`https://www.law.cornell.edu/search/site/${encodeURIComponent(query)}`, '_blank');
+                        break;
+                    case 'bing':
+                        window.open(`https://www.bing.com/?q=${encodeURIComponent(query)}`, '_blank');
+                        break;
+                }
             });
-            
+        });
+                    
             // Search functionality
             searchSourceBtn.addEventListener('click', function() {
                 const query = sourceSearch.value.trim();
@@ -1873,7 +1873,7 @@
                     <button class="quick-source-button" data-source="courtlistener">CourtListener</button>
                     <button class="quick-source-button" data-source="googlescholar">Google Scholar</button>
                     <button class="quick-source-button" data-source="lawcornell">Cornell LII</button>
-                    <button class="quick-source-button" data-source="harvard">Harvard Library</button>
+                    <button class="quick-source-button" data-source="Bing">Bing Search</button>
                 </div>
             `;
             
@@ -1895,8 +1895,8 @@
                         case 'lawcornell':
                             window.open(`https://www.law.cornell.edu/search/site/${encodeURIComponent(searchQuery)}`, '_blank');
                             break;
-                        case 'harvard':
-                            window.open(`https://hollis.harvard.edu/primo-explore/search?query=any,contains,${encodeURIComponent(searchQuery)}`, '_blank');
+                        case 'Bing':
+                            window.open(`https://www.bing.com/search?q=${encodeURIComponent(query)}`, '_blank');
                             break;
                     }
                 });
