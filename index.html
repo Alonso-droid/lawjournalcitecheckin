@@ -733,6 +733,7 @@
                 </div>
                 
                 <div class="quick-source-buttons">
+                    <button class="quick-source-button" data-source="basicgooglesearch">Basic Google Search</button>
                     <button class="quick-source-button" data-source="courtlistener">CourtListener</button>
                     <button class="quick-source-button" data-source="googlescholar">Google Scholar</button>
                     <button class="quick-source-button" data-source="lawcornell">Cornell LII</button>
@@ -1161,6 +1162,9 @@
                 
                 // Open the source in a new tab
                 switch(sourceType) {
+                    case 'basicgooglesearch':
+                        window.open(`https://google.com?q=${encodeURIComponent(query)}`, '_blank');
+                        break;
                     case 'courtlistener':
                         window.open(`https://www.courtlistener.com/opinion/?q=${encodeURIComponent(query)}`, '_blank');
                         break;
@@ -1870,6 +1874,7 @@
                 </div>
                 
                 <div class="quick-source-buttons">
+                    <button class="quick-source-button" data-source="basicgooglesearch">Basic Google Search</button>
                     <button class="quick-source-button" data-source="courtlistener">CourtListener</button>
                     <button class="quick-source-button" data-source="googlescholar">Google Scholar</button>
                     <button class="quick-source-button" data-source="lawcornell">Cornell LII</button>
@@ -1886,6 +1891,9 @@
                     
                     // Open the source in a new tab
                     switch(sourceType) {
+                        case 'basicgooglesearch':
+                            window.open(`https://google.com/?q=${encodeURIComponent(searchQuery)}`, '_blank');
+                            break;
                         case 'courtlistener':
                             window.open(`https://www.courtlistener.com/opinion/?q=${encodeURIComponent(searchQuery)}`, '_blank');
                             break;
