@@ -945,11 +945,12 @@
             },
             "journal_name_format": {
                 rule: "16.3",
-                description: "Journal names should be italicized in citations, even if using the abbreviated form.",
+                description: "Journal names should be formatted according to Bluebook rules: consecutively paginated journals should be in small caps, while non-consecutively paginated journals should be italicized.",
                 examples: [
-                    { correct: "98 *Harv. L. Rev.* 1067", incorrect: "98 Harv. L. Rev. 1067" }
-                ]
-            },
+                    { correct: "98 HARV. L. REV. 1067", incorrect: "98 Harv. L. Rev. 1067" },
+                    { correct: "May 2023 *N.Y.U. L. Rev. Online* 24", incorrect: "May 2023 N.Y.U. L. Rev. Online 24" }
+    ]
+},
             "signal_format": {
                 rule: "1.2",
                 description: "Signals are followed by a comma, except when they introduce a citation clause containing only one citation.",
@@ -1448,15 +1449,32 @@
                 const markdownFootnotes = tempDiv.innerHTML.match(/\[\^(\d+)\]:\s*([\s\S]*?)(?=\[\^|$)/g);
                 
                 if (markdownFootnotes && markdownFootnotes.length > 0) {
-                    markdownFootnotes.forEach((footnote, index) => {
-                        const footnoteContent = footnote.replace(/\[\^(\d+)\]:\s*/, '').trim();
+                    let footnoteMap = {};
+                    
+                    // First pass - collect all footnotes with their correct numbers
+                    markdownFootnotes.forEach((footnote) => {
+                        const numberMatch = footnote.match(/\[\^(\d+)\]:/);
+                        if (numberMatch && numberMatch[1]) {
+                            const number = parseInt(numberMatch[1], 10);
+                            const content = footnote.replace(/\[\^(\d+)\]:\s*/, '').trim();
+                            footnoteMap[number] = {
+                                content: content,
+                                number: number
+                            };
+                        }
+                    });
+                    
+                    // Second pass - add footnotes in correct numerical order
+                    const numbers = Object.keys(footnoteMap).map(num => parseInt(num, 10)).sort((a, b) => a - b);
+                    
+                    numbers.forEach(num => {
                         const footnoteElement = document.createElement('div');
-                        footnoteElement.textContent = footnoteContent;
+                        footnoteElement.textContent = footnoteMap[num].content;
                         
                         extractedFootnotes.push({
                             element: footnoteElement,
-                            number: index + 1,
-                            text: footnoteContent
+                            number: num,
+                            text: footnoteMap[num].content
                         });
                     });
                     
