@@ -27,12 +27,12 @@ A web-based application for law review editors to streamline the citation checki
 
 ### Online Version
 The easiest way to use the Law Review Cite-Checker is through the live version:
-https://[your-github-username].github.io/law-review-cite-checker
+https://Alonso-droid.github.io/law-review-cite-checker
 
 ### Local Installation
 To run the application locally:
 
-1. Clone this repository git clone https://github.com/[your-github-username]/lawjournalcitecheckin.git
+1. Clone this repository git clone https://github.com/Alonso-droid/lawjournalcitecheckin.git
 
 2. 2. Open `index.html` in your web browser
 3. Upload a Word document with footnotes to begin
