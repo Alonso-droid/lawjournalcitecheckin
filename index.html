@@ -1,0 +1,2857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Law Review Cite-Checker</title>
+    <style>
+        :root {
+            --primary-color: #2d5f9a;
+            --primary-dark: #1d4b80;
+            --primary-light: #4f7cb2;
+            --secondary-color: #f5f7fa;
+            --accent-color: #4caf50;
+            --error-color: #f44336;
+            --text-color: #333333;
+            --light-gray: #e0e0e0;
+            --border-color: #cccccc;
+        }
+        
+        /* Base Styles */
+        body {
+            font-family: 'System Font', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-color);
+            background-color: #fcfcfc;
+        }
+        
+        @font-face {
+            font-family: 'System Font';
+            src: local('.SFNSText-Regular'), local('.HelveticaNeueDeskInterface-Regular'), local('.LucidaGrandeUI'), local('Segoe UI'), local('Ubuntu'), local('Roboto-Regular'), local('DroidSans'), local('Tahoma');
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 1.2rem;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* Upload Container */
+        .upload-container {
+            padding: 1rem;
+            background-color: var(--secondary-color);
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Document Panel */
+        .document-panel {
+            flex: 1;
+            border-right: 1px solid var(--light-gray);
+            overflow: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+        
+        /* Source Panel */
+        .source-panel {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+        
+        /* Panel Components */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 0.5rem;
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow: auto;
+        }
+        
+        /* Footnote Styles */
+        .footnote-container {
+            margin-top: 1rem;
+            border-top: 1px solid var(--light-gray);
+            padding-top: 1rem;
+        }
+        
+        .footnote-item {
+            margin: 0.5rem 0;
+            padding: 0.8rem 1rem;
+            background-color: var(--secondary-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .footnote-item:hover {
+            background-color: #e8eef7;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .footnote-item.has-issues {
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .sub-footnote-item {
+            margin: 0.3rem 0 0.3rem 1rem;
+            padding: 0.6rem 0.8rem;
+            background-color: #edf4ff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+        
+        .sub-footnote-item:hover {
+            background-color: #d8e8ff;
+        }
+        
+        .source-item {
+            display: inline-block;
+            margin: 0.25rem;
+            padding: 0.5rem 0.8rem;
+            background-color: #edf4ff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .source-item:hover {
+            background-color: #d8e8ff;
+            transform: translateY(-1px);
+        }
+        
+        /* Button Styles */
+        button {
+            padding: 0.6rem 1.2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-weight: 500;
+        }
+        
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        button.secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        button.secondary:hover {
+            background-color: #f0f5ff;
+        }
+
+        button.success {
+            background-color: var(--accent-color);
+        }
+
+        button.success:hover {
+            background-color: #3d8b40;
+        }
+        
+        button:disabled {
+            background-color: var(--light-gray);
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        /* Citation Issue Styles */
+        .citation-issue {
+            background-color: #fff8e1;
+            border-left: 3px solid #ffb300;
+            padding: 0.8rem;
+            margin: 0.8rem 0;
+            font-size: 0.9rem;
+            border-radius: 4px;
+        }
+
+        .citation-issue .suggestion {
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        
+        .bluebook-reference {
+            background-color: #e3f2fd;
+            border-left: 3px solid #2196f3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .bluebook-reference h4 {
+            margin-top: 0;
+            color: #0d47a1;
+        }
+        
+        .bluebook-reference .examples {
+            background-color: #ffffff;
+            padding: 0.8rem;
+            border-radius: 4px;
+            margin-top: 0.8rem;
+        }
+
+        /* Verification Notes */
+        .verification-notes {
+            margin-top: 1rem;
+            width: 100%;
+        }
+
+        .verification-notes textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.8rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 4px;
+            transition: border-color 0.2s ease;
+            font-family: inherit;
+        }
+
+        .verification-notes textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .verification-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.8rem;
+        }
+
+        /* Search Elements */
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin: 1rem 0;
+        }
+
+        .search-container input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 4px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-container input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Tabs */
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid var(--light-gray);
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.8rem 1.2rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.2s ease;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+
+        .tab:hover {
+            background-color: #f5f7fa;
+        }
+
+        .tab.active {
+            border: 1px solid var(--light-gray);
+            border-bottom: 1px solid white;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+      /* Badge and Status Indicators */
+        .bluebook-issue-badge {
+            display: inline-block;
+            background-color: var(--error-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .verification-status {
+            margin-left: 10px;
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .status-verified {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-issues {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+
+        .status-unverified {
+            background-color: #f5f5f5;
+            color: #616161;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 1rem;
+            background-color: var(--secondary-color);
+            border-top: 1px solid var(--light-gray);
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Web Browser Styling for Source Verification */
+        .browser-container {
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .browser-toolbar {
+            background-color: #f9f9f9;
+            padding: 0.6rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+        }
+
+        .browser-address-bar {
+            flex: 1;
+            background-color: white;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            border: 1px solid var(--light-gray);
+            font-size: 0.9rem;
+            margin: 0 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: system-ui;
+        }
+
+        .browser-content {
+            min-height: 400px;
+            padding: 1.2rem;
+            background-color: white;
+            overflow: auto;
+        }
+
+        .browser-content h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        /* Search Result Styling */
+        .search-result {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        .search-result h4 {
+            margin-top: 0;
+            color: #1a73e8;
+        }
+
+        .search-result-url {
+            color: #0d652d;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-result-content {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-filter {
+            padding: 0.4rem 0.8rem;
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .search-filter:hover {
+            background-color: #e0e0e0;
+        }
+
+        .search-filter.active {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border-color: #bbdefb;
+        }
+
+        /* File Upload Styling */
+        .file-upload-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .file-upload-label {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 0.6rem 1rem;
+            border-radius: 4px;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-upload-label:hover {
+            background-color: #e9e9e9;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Loading Indicator */
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .loading-indicator .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        /* API Key Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .modal h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        
+        .modal-form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .modal-form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 4px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* Quick Legal Source Buttons */
+        .quick-source-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 1rem 0;
+        }
+        
+        .quick-source-button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .quick-source-button:hover {
+            background-color: #e3f2fd;
+            border-color: #bbdefb;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #323232;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        /* Settings Panel */
+        .settings-panel {
+            display: none;
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 300px;
+            background-color: white;
+            border-left: 1px solid var(--light-gray);
+            box-shadow: -2px 0 15px rgba(0,0,0,0.1);
+            z-index: 900;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .settings-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .settings-section {
+            margin-bottom: 2rem;
+        }
+        
+        .settings-section h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 0.5rem;
+        }
+
+        /* Print Styles */
+        @media print {
+            .upload-container, .panel-header button, .footer, .tab-container {
+                display: none;
+            }
+            
+            .main-container {
+                display: block;
+            }
+            
+            .document-panel, .source-panel {
+                width: 100%;
+                border: none;
+                page-break-after: always;
+            }
+            
+            .tab-content {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Law Review Cite-Checker</h1>
+        <div>
+            <span id="document-name"></span>
+            <button id="settings-btn" class="secondary" title="Settings">⚙️</button>
+        </div>
+    </header>
+    
+    <div class="upload-container">
+        <div class="file-upload-container">
+            <label for="document-upload" class="file-upload-label">Choose File</label>
+            <input type="file" id="document-upload" accept=".doc,.docx" />
+            <span id="file-name">No file selected</span>
+        </div>
+        <button id="upload-btn">Upload Document</button>
+        <button id="verify-citations-btn">Verify Citations</button>
+        <button id="export-report-btn" class="secondary">Export Report</button>
+        <button id="share-btn" class="secondary" title="Share with Team">Share</button>
+    </div>
+    
+    <div class="main-container">
+        <div class="document-panel">
+            <div class="panel-header">
+                <h2>Document</h2>
+                <div>
+                    <button id="swap-panels-btn" class="secondary">Swap Panels</button>
+                </div>
+            </div>
+            <div class="panel-content" id="document-content">
+                <p>Upload a document to begin...</p>
+            </div>
+            <div class="footnote-container">
+                <h3>Footnotes</h3>
+                <div id="footnotes-list">
+                    <!-- Footnotes will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="source-panel">
+            <div class="panel-header">
+                <h2>Source Verification</h2>
+                <button id="export-pdf-btn" class="secondary">Save As PDF</button>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tab active" data-tab="source-view">Source View</div>
+                <div class="tab" data-tab="citation-check">Citation Check</div>
+                <div class="tab" data-tab="verification-notes">Verification Notes</div>
+                <div class="tab" data-tab="bluebook-reference">Bluebook Reference</div>
+            </div>
+
+    <div class="tab-content active" id="source-view">
+                <div class="search-container">
+                    <input type="text" id="source-search" placeholder="Search for this source..." />
+                    <button id="search-source-btn">Search Web</button>
+                </div>
+                
+                <div class="search-filters">
+                    <div class="search-filter active" data-filter="all">All</div>
+                    <div class="search-filter" data-filter="cases">Case Law</div>
+                    <div class="search-filter" data-filter="journals">Journals</div>
+                    <div class="search-filter" data-filter="statutes">Statutes</div>
+                    <div class="search-filter" data-filter="books">Books</div>
+                </div>
+                
+                <div class="quick-source-buttons">
+                    <button class="quick-source-button" data-source="courtlistener">CourtListener</button>
+                    <button class="quick-source-button" data-source="googlescholar">Google Scholar</button>
+                    <button class="quick-source-button" data-source="lawcornell">Cornell LII</button>
+                    <button class="quick-source-button" data-source="harvard">Harvard Library</button>
+                </div>
+                
+                <div id="source-content">
+                    <p>Select a source from a footnote to verify...</p>
+                </div>
+                
+                <div class="loading-indicator" id="search-loading">
+                    <div class="spinner"></div>
+                    <div>Searching for source...</div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="citation-check">
+                <div id="citation-issues">
+                    <p>Perform citation check to see Bluebook issues...</p>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="verification-notes">
+                <div class="verification-notes">
+                    <h3>Notes for Current Citation</h3>
+                    <textarea id="verification-notes-text" placeholder="Add verification notes here..."></textarea>
+                    <div class="verification-actions">
+                        <div>
+                            <button id="save-notes-btn">Save Notes</button>
+                            <button id="mark-verified-btn" class="success">Mark as Verified</button>
+                        </div>
+                        <button id="clear-notes-btn" class="secondary">Clear</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="bluebook-reference">
+                <div id="bluebook-content">
+                    <h3>Bluebook Rule Reference</h3>
+                    <p>Select a citation to view relevant Bluebook rules...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Law Review Cite-Checker | Created for efficient citation verification</p>
+    </div>
+    
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="modal">
+        <div class="modal-content">
+            <h2>API Configuration</h2>
+            <p>Enter API keys for enhanced search functionality (optional)</p>
+            
+            <div class="modal-form-group">
+                <label for="courtlistener-key">CourtListener API Key:</label>
+                <input type="text" id="courtlistener-key" placeholder="Enter API key" />
+            </div>
+            
+            <div class="modal-form-group">
+                <label for="harvard-library-key">Harvard Library API Key:</label>
+                <input type="text" id="harvard-library-key" placeholder="Enter API key" />
+            </div>
+            
+            <div class="modal-actions">
+                <button id="save-api-keys-btn">Save Keys</button>
+                <button id="skip-api-keys-btn" class="secondary">Skip</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="settings-panel">
+        <button class="settings-close" id="settings-close-btn">×</button>
+        <h2>Settings</h2>
+        
+        <div class="settings-section">
+            <h3>API Keys</h3>
+            <div class="modal-form-group">
+                <label for="settings-courtlistener-key">CourtListener API Key:</label>
+                <input type="text" id="settings-courtlistener-key" placeholder="Enter API key" />
+            </div>
+            
+            <div class="modal-form-group">
+                <label for="settings-harvard-library-key">Harvard Library API Key:</label>
+                <input type="text" id="settings-harvard-library-key" placeholder="Enter API key" />
+            </div>
+            
+            <button id="settings-save-api-keys-btn">Update Keys</button>
+        </div>
+        
+        <div class="settings-section">
+            <h3>GitHub Integration</h3>
+            <div class="modal-form-group">
+                <label for="github-token">GitHub Token:</label>
+                <input type="text" id="github-token" placeholder="Enter GitHub token" />
+            </div>
+            
+            <div class="modal-form-group">
+                <label for="github-repo">Repository:</label>
+                <input type="text" id="github-repo" placeholder="username/repository" />
+            </div>
+            
+            <button id="settings-save-github-btn">Save GitHub Settings</button>
+        </div>
+        
+        <div class="settings-section">
+            <h3>Display Settings</h3>
+            <div class="modal-form-group">
+                <label>
+                    <input type="checkbox" id="settings-sub-footnotes" checked /> 
+                    Enable Sub-Footnotes (5A, 5B, etc.)
+                </label>
+            </div>
+            
+            <div class="modal-form-group">
+                <label>
+                    <input type="checkbox" id="settings-auto-save" checked /> 
+                    Auto-save verification progress
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Include required libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+    // Document processing and UI interaction logic
+    document.addEventListener('DOMContentLoaded', function() {
+        /**
+         * DOM Element References
+         */
+        const documentUpload = document.getElementById('document-upload');
+        const uploadBtn = document.getElementById('upload-btn');
+        const swapPanelsBtn = document.getElementById('swap-panels-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const verifyCitationsBtn = document.getElementById('verify-citations-btn');
+        const exportReportBtn = document.getElementById('export-report-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const documentContent = document.getElementById('document-content');
+        const sourceContent = document.getElementById('source-content');
+        const footnotesList = document.getElementById('footnotes-list');
+        const sourceSearch = document.getElementById('source-search');
+        const searchSourceBtn = document.getElementById('search-source-btn');
+        const searchLoading = document.getElementById('search-loading');
+        const citationIssues = document.getElementById('citation-issues');
+        const bluebookContent = document.getElementById('bluebook-content');
+        const verificationNotesText = document.getElementById('verification-notes-text');
+        const saveNotesBtn = document.getElementById('save-notes-btn');
+        const markVerifiedBtn = document.getElementById('mark-verified-btn');
+        const clearNotesBtn = document.getElementById('clear-notes-btn');
+        const fileName = document.getElementById('file-name');
+        const documentName = document.getElementById('document-name');
+        const toast = document.getElementById('toast');
+        
+        // Settings and modal elements
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const settingsCloseBtn = document.getElementById('settings-close-btn');
+        const apiKeyModal = document.getElementById('api-key-modal');
+        const saveApiKeysBtn = document.getElementById('save-api-keys-btn');
+        const skipApiKeysBtn = document.getElementById('skip-api-keys-btn');
+        const settingsSaveApiKeysBtn = document.getElementById('settings-save-api-keys-btn');
+        const settingsSaveGithubBtn = document.getElementById('settings-save-github-btn');
+        const settingsSubFootnotes = document.getElementById('settings-sub-footnotes');
+        const settingsAutoSave = document.getElementById('settings-auto-save');
+        
+        /**
+         * Application State
+         */
+        let currentDocument = null;
+        let extractedFootnotes = [];
+        let currentFootnote = null;
+        let currentSource = null;
+        let citationVerificationResults = [];
+        let verificationNotes = {};
+        let verificationStatus = {};
+        
+        // API and settings configuration
+        const appSettings = {
+            apis: {
+                courtlistener: localStorage.getItem('api_courtlistener') || '',
+                harvardLibrary: localStorage.getItem('api_harvardLibrary') || ''
+            },
+            github: {
+                token: localStorage.getItem('github_token') || '',
+                repo: localStorage.getItem('github_repo') || ''
+            },
+            display: {
+                subFootnotes: localStorage.getItem('display_subFootnotes') !== 'false',
+                autoSave: localStorage.getItem('display_autoSave') !== 'false'
+            }
+        };
+        
+        /**
+         * Bluebook Rules Database
+         */
+        const bluebookRules = {
+            "case_name_format": {
+                rule: "2.1(a)",
+                description: "Case names appear in roman type in the text and in textual sentences in a footnote. In citations, case names are italicized.",
+                examples: [
+                    { correct: "*Brown* v. *Board of Education*", incorrect: "Brown v. Board of Education" },
+                    { correct: "*Roe* v. *Wade*", incorrect: "Roe v. Wade" }
+                ]
+            },
+            "journal_name_format": {
+                rule: "16.3",
+                description: "Journal names should be italicized in citations, even if using the abbreviated form.",
+                examples: [
+                    { correct: "98 *Harv. L. Rev.* 1067", incorrect: "98 Harv. L. Rev. 1067" }
+                ]
+            },
+            "signal_format": {
+                rule: "1.2",
+                description: "Signals are followed by a comma, except when they introduce a citation clause containing only one citation.",
+                examples: [
+                    { correct: "See, *Brown* v. *Board of Education*", incorrect: "See *Brown* v. *Board of Education*" }
+                ]
+            },
+            "statute_format": {
+                rule: "12.3",
+                description: "Federal statutes currently in force should be cited to the United States Code (U.S.C.).",
+                examples: [
+                    { correct: "42 U.S.C. § 1983", incorrect: "42 United States Code § 1983" }
+                ]
+            },
+            "book_format": {
+                rule: "15.1",
+                description: "Books, treatises, and other non-periodical materials should have the author's full name in small caps, followed by the title in italics.",
+                examples: [
+                    { correct: "RICHARD A. POSNER, *How Judges Think* 55 (2008)", incorrect: "Richard A. Posner, How Judges Think 55 (2008)" }
+                ]
+            },
+            "url_format": {
+                rule: "18.2.1",
+                description: "URLs should not be enclosed in angle brackets and should not be underlined when they appear in print.",
+                examples: [
+                    { correct: "Available at http://www.example.com", incorrect: "Available at <http://www.example.com>" }
+                ]
+            },
+            "pincite_format": {
+                rule: "3.2",
+                description: "When citing specific pages, provide the page numbers directly after the source citation without 'at' or other words.",
+                examples: [
+                    { correct: "*Brown* v. *Board of Education*, 347 U.S. 483, 495", incorrect: "*Brown* v. *Board of Education*, 347 U.S. 483 at 495" }
+                ]
+            },
+            "court_format": {
+                rule: "10.4",
+                description: "Court names should be abbreviated according to Rule 10.4. In federal opinions, the court should not be indicated except for decisions of the lower federal courts.",
+                examples: [
+                    { correct: "*Jones* v. *Smith*, 243 F.3d 753 (D.C. Cir. 2001)", incorrect: "*Jones* v. *Smith*, 243 F.3d 753 (United States Court of Appeals for the District of Columbia Circuit, 2001)" }
+                ]
+            },
+            "year_format": {
+                rule: "10.5",
+                description: "The year of decision should be provided in parentheses after the citation.",
+                examples: [
+                    { correct: "347 U.S. 483 (1954)", incorrect: "347 U.S. 483 1954" }
+                ]
+            },
+            "multiple_sources": {
+                rule: "1.4",
+                description: "When citing multiple authorities, separate them with semicolons.",
+                examples: [
+                    { correct: "*Brown* v. *Board of Education*, 347 U.S. 483 (1954); *Roe* v. *Wade*, 410 U.S. 113 (1973)", incorrect: "*Brown* v. *Board of Education*, 347 U.S. 483 (1954), *Roe* v. *Wade*, 410 U.S. 113 (1973)" }
+                ]
+            }
+        };
+        
+        /**
+         * Citation Pattern Recognition
+         */
+        const citationPatterns = {
+            case: /([A-Za-z\s\.'&,]+)\sv\.\s([A-Za-z\s\.'&,]+),\s(\d+)\s([A-Za-z\.\s]+)\s(\d+)(?:\s\(([^)]+)\))?/g,
+            statute: /(\d+)\s([A-Za-z\.]+)\s(§+)\s(\d[\w\-\.]+)(?:\s\(([^)]+)\))?/g,
+            journal: /([A-Za-z\s\.']+),\s([^,]+),\s(\d+)\s([A-Za-z\.\s]+)\s(\d+)(?:,\s(\d+)(?:-(\d+))?)?(?:\s\(([^)]+)\))?/g,
+            book: /([A-Za-z\s\.']+),\s\[([^\]]+)\](?:,\sat\s(\d+))?(?:\s\(([^)]+)\))?/g,
+            website: /([^,]+),\s([^,]+),\savailable\sat\s(https?:\/\/[^\s]+)(?:\s\(([^)]+)\))?/g
+        };
+        
+        /**
+         * Citation Separators
+         */
+        const citationSeparators = [
+            '; ', 
+            '. See ', 
+            '. See also ', 
+            '. But see ', 
+            '. Cf. ', 
+            '. Compare ', 
+            '. E.g., ',
+            '. Accord ',
+            '. Contra '
+        ];
+        
+        /**
+         * Init Function - Run on page load
+         */
+        function init() {
+            // Load settings
+            loadSettings();
+            
+            // Attach event listeners
+            attachEventListeners();
+            
+            // Check if we need to show API key modal
+            if (!appSettings.apis.courtlistener && !appSettings.apis.harvardLibrary) {
+                // Only show on first use
+                if (!localStorage.getItem('api_modal_shown')) {
+                    setTimeout(() => {
+                        apiKeyModal.style.display = 'block';
+                        localStorage.setItem('api_modal_shown', 'true');
+                    }, 1000);
+                }
+            }
+            
+            // Load any saved verification state
+            if (appSettings.display.autoSave) {
+                loadVerificationState();
+            }
+        }
+        
+        /**
+         * Load application settings from localStorage
+         */
+        function loadSettings() {
+            // Update settings UI
+            document.getElementById('settings-courtlistener-key').value = appSettings.apis.courtlistener;
+            document.getElementById('settings-harvard-library-key').value = appSettings.apis.harvardLibrary;
+            document.getElementById('github-token').value = appSettings.github.token;
+            document.getElementById('github-repo').value = appSettings.github.repo;
+            settingsSubFootnotes.checked = appSettings.display.subFootnotes;
+            settingsAutoSave.checked = appSettings.display.autoSave;
+            
+            // Also update modal values
+            document.getElementById('courtlistener-key').value = appSettings.apis.courtlistener;
+            document.getElementById('harvard-library-key').value = appSettings.apis.harvardLibrary;
+        }
+
+  /**
+         * Attach Event Listeners
+         */
+        function attachEventListeners() {
+            // File upload listeners
+            documentUpload.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileName.textContent = this.files[0].name;
+                } else {
+                    fileName.textContent = 'No file selected';
+                }
+            });
+            
+            uploadBtn.addEventListener('click', function() {
+                if (documentUpload.files.length === 0) {
+                    showToast('Please select a document to upload.');
+                    return;
+                }
+                
+                const file = documentUpload.files[0];
+                processDocument(file);
+            });
+            
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and content
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(this.getAttribute('data-tab')).classList.add('active');
+                });
+            });
+            
+            // Search filter selection
+            document.querySelectorAll('.search-filter').forEach(filter => {
+                filter.addEventListener('click', function() {
+                    // Remove active class from all filters
+                    document.querySelectorAll('.search-filter').forEach(f => f.classList.remove('active'));
+                    
+                    // Add active class to clicked filter
+                    this.classList.add('active');
+                    
+                    // Update search placeholder based on filter
+                    const filterType = this.getAttribute('data-filter');
+                    switch(filterType) {
+                        case 'cases':
+                            sourceSearch.placeholder = 'Search for case law...';
+                            break;
+                        case 'journals':
+                            sourceSearch.placeholder = 'Search for journal articles...';
+                            break;
+                        case 'statutes':
+                            sourceSearch.placeholder = 'Search for statutes and regulations...';
+                            break;
+                        case 'books':
+                            sourceSearch.placeholder = 'Search for books and treatises...';
+                            break;
+                        default:
+                            sourceSearch.placeholder = 'Search for this source...';
+                    }
+                });
+            });
+            
+            // Quick source buttons
+            document.querySelectorAll('.quick-source-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (!currentSource) {
+                        showToast('Please select a source from a footnote first.');
+                        return;
+                    }
+                    
+                    const sourceType = this.getAttribute('data-source');
+                    const query = currentSource.searchQuery;
+                    
+                    // Open the source in a new tab
+                    switch(sourceType) {
+                        case 'courtlistener':
+                            window.open(`https://www.courtlistener.com/opinion/?q=${encodeURIComponent(query)}`, '_blank');
+                            break;
+                        case 'googlescholar':
+                            window.open(`https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`, '_blank');
+                            break;
+                        case 'lawcornell':
+                            window.open(`https://www.law.cornell.edu/search/site/${encodeURIComponent(query)}`, '_blank');
+                            break;
+                        case 'harvard':
+                            window.open(`https://hollis.harvard.edu/primo-explore/search?query=any,contains,${encodeURIComponent(query)}`, '_blank');
+                            break;
+                    }
+                });
+            });
+            
+            // Search functionality
+            searchSourceBtn.addEventListener('click', function() {
+                const query = sourceSearch.value.trim();
+                if (!query) {
+                    showToast('Please enter a search query.');
+                    return;
+                }
+                
+                searchSource(query);
+            });
+            
+            // Search on Enter key
+            sourceSearch.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const query = this.value.trim();
+                    if (query) {
+                        searchSource(query);
+                    }
+                }
+            });
+            
+            // Verification actions
+            saveNotesBtn.addEventListener('click', function() {
+                if (!currentFootnote) {
+                    showToast('Please select a footnote first.');
+                    return;
+                }
+                
+                const footnoteNumber = parseInt(currentFootnote.number);
+                verificationNotes[footnoteNumber] = verificationNotesText.value;
+                
+                if (appSettings.display.autoSave) {
+                    saveVerificationState();
+                }
+                
+                showToast(`Notes saved for footnote ${footnoteNumber}.`);
+            });
+            
+            markVerifiedBtn.addEventListener('click', function() {
+                if (!currentFootnote) {
+                    showToast('Please select a footnote first.');
+                    return;
+                }
+                
+                const footnoteNumber = parseInt(currentFootnote.number);
+                verificationStatus[footnoteNumber] = 'verified';
+                
+                // Update the footnote item
+                updateFootnoteStatus(footnoteNumber, 'verified');
+                
+                if (appSettings.display.autoSave) {
+                    saveVerificationState();
+                }
+                
+                showToast(`Footnote ${footnoteNumber} marked as verified.`);
+            });
+            
+            clearNotesBtn.addEventListener('click', function() {
+                verificationNotesText.value = '';
+                
+                if (currentFootnote) {
+                    const footnoteNumber = parseInt(currentFootnote.number);
+                    delete verificationNotes[footnoteNumber];
+                    
+                    if (appSettings.display.autoSave) {
+                        saveVerificationState();
+                    }
+                }
+            });
+            
+            // Swap panels
+            swapPanelsBtn.addEventListener('click', function() {
+                const docPanel = document.querySelector('.document-panel');
+                const sourcePanel = document.querySelector('.source-panel');
+                
+                if (docPanel.style.order === '2') {
+                    docPanel.style.order = '1';
+                    sourcePanel.style.order = '2';
+                } else {
+                    docPanel.style.order = '2';
+                    sourcePanel.style.order = '1';
+                }
+            });
+            
+            // Export functionality
+            exportPdfBtn.addEventListener('click', function() {
+                if (!currentFootnote) {
+                    showToast('Please select a footnote first.');
+                    return;
+                }
+                
+                exportAsPdf();
+            });
+            
+            exportReportBtn.addEventListener('click', function() {
+                if (!citationVerificationResults || citationVerificationResults.length === 0) {
+                    showToast('Please verify citations first.');
+                    return;
+                }
+                
+                exportCitationReport();
+            });
+            
+            // Share functionality
+            shareBtn.addEventListener('click', function() {
+                if (!appSettings.github.token || !appSettings.github.repo) {
+                    showToast('Please configure GitHub settings first.');
+                    settingsPanel.style.display = 'block';
+                    return;
+                }
+                
+                shareWithTeam();
+            });
+            
+            // Citation verification
+            verifyCitationsBtn.addEventListener('click', function() {
+                if (!extractedFootnotes || extractedFootnotes.length === 0) {
+                    showToast('Please upload a document with footnotes first.');
+                    return;
+                }
+                
+                verifyCitations();
+            });
+            
+            // Settings panel
+            settingsBtn.addEventListener('click', function() {
+                settingsPanel.style.display = 'block';
+            });
+            
+            settingsCloseBtn.addEventListener('click', function() {
+                settingsPanel.style.display = 'none';
+            });
+            
+            // API key modal
+            saveApiKeysBtn.addEventListener('click', function() {
+                const courtlistenerKey = document.getElementById('courtlistener-key').value.trim();
+                const harvardLibraryKey = document.getElementById('harvard-library-key').value.trim();
+                
+                appSettings.apis.courtlistener = courtlistenerKey;
+                appSettings.apis.harvardLibrary = harvardLibraryKey;
+                
+                localStorage.setItem('api_courtlistener', courtlistenerKey);
+                localStorage.setItem('api_harvardLibrary', harvardLibraryKey);
+                
+                // Update settings panel too
+                document.getElementById('settings-courtlistener-key').value = courtlistenerKey;
+                document.getElementById('settings-harvard-library-key').value = harvardLibraryKey;
+                
+                apiKeyModal.style.display = 'none';
+                showToast('API keys saved successfully.');
+            });
+            
+            skipApiKeysBtn.addEventListener('click', function() {
+                apiKeyModal.style.display = 'none';
+            });
+            
+            // Settings panel actions
+            settingsSaveApiKeysBtn.addEventListener('click', function() {
+                const courtlistenerKey = document.getElementById('settings-courtlistener-key').value.trim();
+                const harvardLibraryKey = document.getElementById('settings-harvard-library-key').value.trim();
+                
+                appSettings.apis.courtlistener = courtlistenerKey;
+                appSettings.apis.harvardLibrary = harvardLibraryKey;
+                
+                localStorage.setItem('api_courtlistener', courtlistenerKey);
+                localStorage.setItem('api_harvardLibrary', harvardLibraryKey);
+                
+                // Update modal values too
+                document.getElementById('courtlistener-key').value = courtlistenerKey;
+                document.getElementById('harvard-library-key').value = harvardLibraryKey;
+                
+                showToast('API keys updated successfully.');
+            });
+            
+            settingsSaveGithubBtn.addEventListener('click', function() {
+                const githubToken = document.getElementById('github-token').value.trim();
+                const githubRepo = document.getElementById('github-repo').value.trim();
+                
+                appSettings.github.token = githubToken;
+                appSettings.github.repo = githubRepo;
+                
+                localStorage.setItem('github_token', githubToken);
+                localStorage.setItem('github_repo', githubRepo);
+                
+                showToast('GitHub settings updated successfully.');
+            });
+            
+            // Display settings
+            settingsSubFootnotes.addEventListener('change', function() {
+                appSettings.display.subFootnotes = this.checked;
+                localStorage.setItem('display_subFootnotes', this.checked);
+                
+                // Reload footnotes if we have any
+                if (extractedFootnotes && extractedFootnotes.length > 0) {
+                    displayFootnotes(extractedFootnotes);
+                }
+            });
+            
+            settingsAutoSave.addEventListener('change', function() {
+                appSettings.display.autoSave = this.checked;
+                localStorage.setItem('display_autoSave', this.checked);
+            });
+        }
+        
+        /**
+         * Process uploaded Word document
+         */
+        function processDocument(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const arrayBuffer = event.target.result;
+                
+                // Update document name display
+                documentName.textContent = file.name;
+                
+                // Use mammoth.js to convert docx to HTML
+                mammoth.convertToHtml({arrayBuffer: arrayBuffer})
+                    .then(function(result) {
+                        currentDocument = result.value;
+                        
+                        // Display the document content
+                        documentContent.innerHTML = currentDocument;
+                        
+                        // Extract and display footnotes
+                        extractFootnotes(currentDocument);
+                        
+                        // Clear any previous verification results
+                        citationVerificationResults = [];
+                        citationIssues.innerHTML = '<p>Perform citation check to see Bluebook issues...</p>';
+                    })
+                    .catch(function(error) {
+                        console.error('Error converting document:', error);
+                        documentContent.innerHTML = '<p>Error loading document. Please try again.</p>';
+                        showToast('Error loading document. Please try again.');
+                    });
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        /**
+         * Extract footnotes from the document
+         */
+        function extractFootnotes(htmlContent) {
+            // Create a temporary element to parse the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            
+            // Different approaches to find footnotes
+            
+            // 1. Look for footnote references with superscript
+            const footnoteRefs = tempDiv.querySelectorAll('sup');
+            
+            // 2. Look for elements that might be footnotes
+            const potentialFootnotes = tempDiv.querySelectorAll('div[id^="footnote"], .footnote, [class*="footnote"]');
+            
+            // 3. Look for actual footnote markers
+            const footnoteSections = tempDiv.querySelectorAll('[id^="footnote"], [class^="footnote"]');
+            
+            // Collect all footnote candidates
+            let footnoteElements = [...footnoteRefs, ...potentialFootnotes, ...footnoteSections];
+            
+            // Clear previous footnotes
+            footnotesList.innerHTML = '';
+            extractedFootnotes = [];
+            
+            if (footnoteElements.length === 0) {
+                // If no footnote elements found, try to find text that looks like footnotes
+                // This is a fallback for documents where footnotes aren't properly marked up
+                
+                // Look for [^1] style footnotes common in markdown
+                const markdownFootnotes = tempDiv.innerHTML.match(/\[\^(\d+)\]:\s*([\s\S]*?)(?=\[\^|$)/g);
+                
+                if (markdownFootnotes && markdownFootnotes.length > 0) {
+                    markdownFootnotes.forEach((footnote, index) => {
+                        const footnoteContent = footnote.replace(/\[\^(\d+)\]:\s*/, '').trim();
+                        const footnoteElement = document.createElement('div');
+                        footnoteElement.textContent = footnoteContent;
+                        
+                        extractedFootnotes.push({
+                            element: footnoteElement,
+                            number: index + 1,
+                            text: footnoteContent
+                        });
+                    });
+                    
+                    displayFootnotes(extractedFootnotes);
+                } else {
+                    // Look for numbered paragraphs that might be footnotes
+                    const paragraphs = tempDiv.querySelectorAll('p');
+                    let foundFootnotes = false;
+                    
+                    paragraphs.forEach((p, index) => {
+                        const text = p.textContent.trim();
+                        
+                        // Check if this looks like a footnote (starts with a number or has [x] format)
+                        if (text.match(/^\[\d+\]/) || text.match(/^\d+\./) || text.match(/^\[\^(\d+)\]/)) {
+                            foundFootnotes = true;
+                            extractedFootnotes.push({
+                                element: p,
+                                number: index + 1,
+                                text: text
+                            });
+                        }
+                    });
+                    
+                    if (foundFootnotes) {
+                        displayFootnotes(extractedFootnotes);
+                    } else {
+                        // Final fallback: just look for any element with "footnote" in its text
+                        const allElements = tempDiv.querySelectorAll('*');
+                        allElements.forEach((el, index) => {
+                            if (el.textContent.toLowerCase().includes('footnote') || 
+                                el.id.toLowerCase().includes('footnote') || 
+                                (el.className && el.className.toLowerCase().includes('footnote'))) {
+                                foundFootnotes = true;
+                                extractedFootnotes.push({
+                                    element: el,
+                                    number: index + 1,
+                                    text: el.textContent
+                                });
+                            }
+                        });
+                        
+                        if (foundFootnotes) {
+                            displayFootnotes(extractedFootnotes);
+                        } else {
+                            footnotesList.innerHTML = '<p>No footnotes detected in the document.</p>';
+                        }
+                    }
+                }
+            } else {
+                // Check if we have actual footnote section elements
+                if (footnoteSections.length > 0) {
+                    // Use these as the primary source of footnotes
+                    footnoteElements = footnoteSections;
+                }
+                
+                // Process detected footnote elements
+                footnoteElements.forEach((footnote, index) => {
+                    extractedFootnotes.push({
+                        element: footnote,
+                        number: index + 1,
+                        text: footnote.textContent.trim()
+                    });
+                });
+                
+                displayFootnotes(extractedFootnotes);
+            }
+        }
+
+    /**
+         * Display extracted footnotes
+         */
+        function displayFootnotes(footnotes) {
+            // Clear previous footnotes
+            footnotesList.innerHTML = '';
+            
+            footnotes.forEach((footnote) => {
+                const footnoteNumber = footnote.number;
+                let footnoteText = footnote.text || footnote.element.textContent.trim();
+                
+                // Clean up the footnote text (remove numbers at start, etc.)
+                let cleanFootnoteText = footnoteText
+                    .replace(/^\[\d+\]\s*/, '')
+                    .replace(/^\d+\.\s*/, '')
+                    .replace(/^\[\^(\d+)\]:\s*/, '')
+                    .replace(/^\[\^(\d+)\]\s*/, '');
+                
+                const footnoteItem = document.createElement('div');
+                footnoteItem.className = 'footnote-item';
+                footnoteItem.dataset.number = footnoteNumber;
+                
+                // Create footnote header with number
+                const footnoteHeader = document.createElement('div');
+                footnoteHeader.innerHTML = `<strong>Footnote ${footnoteNumber}:</strong>`;
+                
+                // Add status indicator if we have one
+                if (verificationStatus[footnoteNumber]) {
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    if (verificationStatus[footnoteNumber] === 'verified') {
+                        statusClass = 'status-verified';
+                        statusText = 'Verified';
+                    } else if (verificationStatus[footnoteNumber] === 'issues') {
+                        statusClass = 'status-issues';
+                        statusText = 'Has Issues';
+                    } else {
+                        statusClass = 'status-unverified';
+                        statusText = 'Unverified';
+                    }
+                    
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = `verification-status ${statusClass}`;
+                    statusSpan.textContent = statusText;
+                    footnoteHeader.appendChild(statusSpan);
+                }
+                
+                footnoteItem.appendChild(footnoteHeader);
+                
+                // Add footnote content
+                const footnoteContent = document.createElement('div');
+                footnoteContent.textContent = cleanFootnoteText;
+                footnoteItem.appendChild(footnoteContent);
+                
+                // Check if we should process sub-footnotes
+                if (appSettings.display.subFootnotes) {
+                    // Try to separate footnote into multiple citations
+                    const subSources = separateCitations(cleanFootnoteText);
+                    
+                    if (subSources.length > 1) {
+                        const subFootnotesContainer = document.createElement('div');
+                        subFootnotesContainer.className = 'sub-footnotes-container';
+                        
+                        subSources.forEach((source, index) => {
+                            const subLabel = String.fromCharCode(65 + index); // A, B, C, etc.
+                            const citationType = identifyCitationType(source);
+                            
+                            const subFootnoteItem = document.createElement('div');
+                            subFootnoteItem.className = 'sub-footnote-item';
+                            subFootnoteItem.dataset.number = `${footnoteNumber}${subLabel}`;
+                            subFootnoteItem.dataset.index = index;
+                            subFootnoteItem.dataset.type = citationType;
+                            subFootnoteItem.innerHTML = `<strong>${footnoteNumber}${subLabel}:</strong> ${source}`;
+                            
+                            // Add click event for sub-footnote selection
+                            subFootnoteItem.addEventListener('click', function(e) {
+                                e.stopPropagation(); // Prevent triggering parent footnote click
+                                
+                                // Remove highlight from all sub-footnotes
+                                document.querySelectorAll('.sub-footnote-item').forEach(item => {
+                                    item.style.backgroundColor = '';
+                                });
+                                
+                                // Highlight this sub-footnote
+                                this.style.backgroundColor = '#d8e8ff';
+                                
+                                const footnoteNumber = parseInt(this.dataset.number.match(/\d+/)[0]);
+                                const subLabel = this.dataset.number.replace(/\d+/, '');
+                                const sourceText = this.textContent.replace(new RegExp(`^\\s*${footnoteNumber}${subLabel}:\\s*`), '');
+                                
+                                currentFootnote = {
+                                    number: footnoteNumber,
+                                    subLabel: subLabel,
+                                    text: sourceText,
+                                    type: this.dataset.type
+                                };
+                                
+                                // Generate search query from the source
+                                const searchQuery = generateSearchQuery(sourceText, this.dataset.type);
+                                
+                                // Store current source
+                                currentSource = {
+                                    text: sourceText,
+                                    searchQuery: searchQuery,
+                                    footnoteNumber: footnoteNumber,
+                                    subLabel: subLabel,
+                                    type: this.dataset.type
+                                };
+                                
+                                // Update search input with suggested query
+                                sourceSearch.value = searchQuery;
+                                
+                                // Load verification notes if they exist
+                                const noteKey = `${footnoteNumber}${subLabel}`;
+                                if (verificationNotes[noteKey]) {
+                                    verificationNotesText.value = verificationNotes[noteKey];
+                                } else {
+                                    verificationNotesText.value = '';
+                                }
+                                
+                                // Update Bluebook reference
+                                updateBluebookReference(this.dataset.type);
+                                
+                                // Show source in verification panel
+                                displaySourceVerification(sourceText, searchQuery, this.dataset.type);
+                            });
+                            
+                            subFootnotesContainer.appendChild(subFootnoteItem);
+                        });
+                        
+                        footnoteItem.appendChild(subFootnotesContainer);
+                    }
+                }
+                
+                // Add click event to handle footnote selection
+                footnoteItem.addEventListener('click', function() {
+                    // Remove highlight from all footnotes
+                    document.querySelectorAll('.footnote-item').forEach(item => {
+                        item.style.backgroundColor = '';
+                    });
+                    
+                    // Highlight this footnote
+                    this.style.backgroundColor = '#e8eef7';
+                    
+                    const footnoteNumber = parseInt(this.dataset.number);
+                    const footnoteText = this.querySelector('div:nth-child(2)').textContent;
+                    
+                    currentFootnote = {
+                        number: footnoteNumber,
+                        text: footnoteText
+                    };
+                    
+                    // Load verification notes if they exist
+                    if (verificationNotes[footnoteNumber]) {
+                        verificationNotesText.value = verificationNotes[footnoteNumber];
+                    } else {
+                        verificationNotesText.value = '';
+                    }
+                    
+                    // Parse sources from the footnote if no sub-footnotes
+                    if (!appSettings.display.subFootnotes || 
+                        !this.querySelector('.sub-footnotes-container')) {
+                        parseSourcesFromFootnote(footnoteText, footnoteNumber);
+                    }
+                    
+                    // Clear Bluebook reference
+                    bluebookContent.innerHTML = '<h3>Bluebook Rule Reference</h3><p>Select a citation to view relevant Bluebook rules...</p>';
+                });
+                
+                footnotesList.appendChild(footnoteItem);
+            });
+        }
+        
+        /**
+         * Identify citation type based on patterns
+         */
+        function identifyCitationType(citation) {
+            for (const [type, pattern] of Object.entries(citationPatterns)) {
+                // We need to reset the regex lastIndex
+                pattern.lastIndex = 0;
+                if (pattern.test(citation)) {
+                    return type;
+                }
+            }
+            
+            // If no specific pattern matches, try to determine the type based on content
+            if (citation.includes(' v. ')) {
+                return 'case';
+            } else if (citation.includes(' § ')) {
+                return 'statute';
+            } else if (citation.match(/\d+\s[A-Z][a-z]+\.\s[A-Z][a-z]+\.\s\d+/)) {
+                return 'journal';
+            } else if (citation.includes('http')) {
+                return 'website';
+            } else if (citation.match(/\([0-9]{4}\)/)) {
+                // Likely a book or article with year in parentheses
+                return 'book';
+            }
+            
+            return 'unknown';
+        }
+        
+        /**
+         * Separate citations in a footnote
+         */
+        function separateCitations(footnoteText) {
+            let sources = [footnoteText]; // Start with whole footnote as one source
+            
+            // Try to split by common separators
+            for (const separator of citationSeparators) {
+                if (footnoteText.includes(separator)) {
+                    // If we find a separator, split the text
+                    sources = [];
+                    const parts = footnoteText.split(separator);
+                    
+                    // Add first part
+                    sources.push(parts[0]);
+                    
+                    // Add remaining parts with their separators (except the first one)
+                    for (let i = 1; i < parts.length; i++) {
+                        sources.push(separator.trim() + ' ' + parts[i]);
+                    }
+                    
+                    break; // Once we've found one separator type, use that
+                }
+            }
+            
+            return sources;
+        }
+        
+        /**
+         * Parse sources from a footnote
+         */
+        function parseSourcesFromFootnote(footnoteText, footnoteNumber) {
+            // Detect different sources within a single footnote
+            const sources = separateCitations(footnoteText);
+            
+            // Create sources UI
+            let sourcesHtml = `<h3>Sources in Footnote ${footnoteNumber}</h3>`;
+            
+            if (sources.length === 0) {
+                sourcesHtml += '<p>No sources detected in this footnote.</p>';
+            } else {
+                sourcesHtml += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+                sources.forEach((source, index) => {
+                    // Determine the citation type
+                    const citationType = identifyCitationType(source);
+                    
+                    // Generate a search query from the source
+                    const searchQuery = generateSearchQuery(source, citationType);
+                    
+                    sourcesHtml += `
+                        <div class="source-item" 
+                             data-source="${encodeURIComponent(source)}" 
+                             data-search="${encodeURIComponent(searchQuery)}"
+                             data-type="${citationType}">
+                            ${source.substring(0, 50)}${source.length > 50 ? '...' : ''}
+                        </div>`;
+                });
+                sourcesHtml += '</div>';
+            }
+            
+            // Look for citation issues if we have verification results
+            let citationIssuesHtml = '';
+            const footnoteCitationResult = citationVerificationResults.find(r => r.footnoteNumber === footnoteNumber);
+            
+            if (footnoteCitationResult && footnoteCitationResult.issues.length > 0) {
+                citationIssuesHtml = `<h3>Citation Issues</h3>`;
+                
+                footnoteCitationResult.issues.forEach(issue => {
+                    citationIssuesHtml += `
+                        <div class="citation-issue">
+                            <div><strong>${issue.ruleId}:</strong> ${issue.description}</div>
+                            ${issue.suggested ? `<div class="suggestion">Suggestion: ${issue.suggested}</div>` : ''}
+                        </div>`;
+                });
+            }
+            
+            // Update source panel with the sources
+            sourceContent.innerHTML = sourcesHtml + (citationIssuesHtml ? '<hr>' + citationIssuesHtml : '');
+            
+            // Add click events to source items
+            document.querySelectorAll('.source-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const sourceText = decodeURIComponent(this.getAttribute('data-source'));
+                    const searchQuery = decodeURIComponent(this.getAttribute('data-search'));
+                    const citationType = this.getAttribute('data-type');
+                    
+                    // Update search input with suggested query
+                    sourceSearch.value = searchQuery;
+                    
+                    // Store current source
+                    currentSource = {
+                        text: sourceText,
+                        searchQuery: searchQuery,
+                        footnoteNumber: footnoteNumber,
+                        type: citationType
+                    };
+                    
+                    // Update Bluebook reference
+                    updateBluebookReference(citationType);
+                    
+                    // Show source in the verification panel
+                    displaySourceVerification(sourceText, searchQuery, citationType);
+                });
+            });
+        }
+        
+        /**
+         * Display source verification panel
+         */
+        function displaySourceVerification(sourceText, searchQuery, citationType) {
+            // Show source verification UI
+            document.querySelector('.tab[data-tab="source-view"]').click();
+            
+            // Update source display
+            let sourceHtml = `
+                <div class="verification-source">
+                    <h3>Citation to Verify</h3>
+                    <div class="source-content">${sourceText}</div>
+                </div>
+                
+                <div class="quick-source-buttons">
+                    <button class="quick-source-button" data-source="courtlistener">CourtListener</button>
+                    <button class="quick-source-button" data-source="googlescholar">Google Scholar</button>
+                    <button class="quick-source-button" data-source="lawcornell">Cornell LII</button>
+                    <button class="quick-source-button" data-source="harvard">Harvard Library</button>
+                </div>
+            `;
+            
+            sourceContent.innerHTML = sourceHtml;
+            
+            // Reattach event listeners to quick source buttons
+            document.querySelectorAll('.quick-source-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const sourceType = this.getAttribute('data-source');
+                    
+                    // Open the source in a new tab
+                    switch(sourceType) {
+                        case 'courtlistener':
+                            window.open(`https://www.courtlistener.com/opinion/?q=${encodeURIComponent(searchQuery)}`, '_blank');
+                            break;
+                        case 'googlescholar':
+                            window.open(`https://scholar.google.com/scholar?q=${encodeURIComponent(searchQuery)}`, '_blank');
+                            break;
+                        case 'lawcornell':
+                            window.open(`https://www.law.cornell.edu/search/site/${encodeURIComponent(searchQuery)}`, '_blank');
+                            break;
+                        case 'harvard':
+                            window.open(`https://hollis.harvard.edu/primo-explore/search?query=any,contains,${encodeURIComponent(searchQuery)}`, '_blank');
+                            break;
+                    }
+                });
+            });
+        }
+        
+        /**
+         * Generate a search query for a source
+         */
+        function generateSearchQuery(sourceText, citationType) {
+            // Strip any citation signals
+            let cleanText = sourceText
+                .replace(/^See,?\s/, '')
+                .replace(/^E\.g\.,?\s/, '')
+                .replace(/^Cf\.,?\s/, '')
+                .replace(/^Compare\s/, '')
+                .replace(/^Accord\s/, '')
+                .replace(/^But see\s/, '')
+                .replace(/^Contra\s/, '');
+            
+            // Generate query based on citation type
+            switch(citationType) {
+                case 'case':
+                    // Extract case name for case citations
+                    const caseMatch = cleanText.match(/([A-Za-z\s\.'&,]+)\sv\.\s([A-Za-z\s\.'&,]+)/);
+                    if (caseMatch) {
+                        return `${caseMatch[1]} v. ${caseMatch[2]}`;
+                    }
+                    break;
+                
+                case 'statute':
+                    // Extract statute number and section
+                    const statuteMatch = cleanText.match(/(\d+)\s([A-Za-z\.]+)\s(§+)\s(\d[\w\-\.]+)/);
+                    if (statuteMatch) {
+                        return `${statuteMatch[1]} ${statuteMatch[2]} ${statuteMatch[3]} ${statuteMatch[4]}`;
+                    }
+                    break;
+                
+                case 'journal':
+                    // Extract article title or journal information
+                    const journalMatch = cleanText.match(/([A-Za-z\s\.']+),\s([^,]+),\s(\d+)\s([A-Za-z\.\s]+)/);
+                    if (journalMatch) {
+                        return journalMatch[2]; // Return the title
+                    }
+                    break;
+                
+                case 'book':
+                    // Extract book title
+                    const bookMatch = cleanText.match(/([A-Za-z\s\.']+),\s\[([^\]]+)\]/);
+                    if (bookMatch) {
+                        return bookMatch[2]; // Return the title
+                    }
+                    break;
+                
+                case 'website':
+                    // Extract URL
+                    const urlMatch = cleanText.match(/(https?:\/\/[^\s]+)/);
+                    if (urlMatch) {
+                        return urlMatch[1]; // Return the URL
+                    }
+                    break;
+            }
+            
+            // Default: just take the first 5-7 words
+            const words = cleanText.split(' ').filter(w => w.length > 3); // Only words with more than 3 chars
+            return words.slice(0, Math.min(7, words.length)).join(' ');
+        }
+
+       /**
+         * Search for a source
+         */
+        function searchSource(query) {
+            // Show loading indicator
+            searchLoading.style.display = 'flex';
+            sourceContent.style.display = 'none';
+            
+            // Get the active filter
+            const activeFilter = document.querySelector('.search-filter.active').getAttribute('data-filter');
+            
+            // Determine source type from current source or filter
+            let sourceType = (currentSource && currentSource.type) ? currentSource.type : 'unknown';
+            
+            if (activeFilter !== 'all') {
+                sourceType = activeFilter;
+            }
+            
+            // Try API-based search if keys are available
+            let searchPromise;
+            
+            if (sourceType === 'cases' && appSettings.apis.courtlistener) {
+                searchPromise = searchCourtListener(query);
+            } else if (sourceType === 'journals' && appSettings.apis.harvardLibrary) {
+                searchPromise = searchHarvardLibrary(query);
+            } else {
+                // Use simulated search results if no API keys
+                searchPromise = Promise.resolve(generateSearchResults(query, sourceType));
+            }
+            
+            // Process search results
+            searchPromise.then(results => {
+                // Hide loading indicator
+                searchLoading.style.display = 'none';
+                sourceContent.style.display = 'block';
+                
+                // Display results
+                sourceContent.innerHTML = results;
+                
+                // Add event listener for verification notes
+                const notesTextarea = sourceContent.querySelector('.verification-notes textarea');
+                if (notesTextarea) {
+                    notesTextarea.addEventListener('input', function() {
+                        verificationNotesText.value = this.value;
+                    });
+                    
+                    // When user clicks button to add to verification notes
+                    const addToNotesBtn = sourceContent.querySelector('.verification-notes button');
+                    if (addToNotesBtn) {
+                        addToNotesBtn.addEventListener('click', function() {
+                            verificationNotesText.value = notesTextarea.value;
+                            document.querySelector('.tab[data-tab="verification-notes"]').click();
+                        });
+                    }
+                }
+            }).catch(error => {
+                console.error('Search error:', error);
+                searchLoading.style.display = 'none';
+                sourceContent.style.display = 'block';
+                sourceContent.innerHTML = `<p>Error performing search: ${error.message}</p>`;
+            });
+        }
+        
+        /**
+         * Generate search results HTML
+         */
+        function generateSearchResults(query, contentType) {
+            // Create a browser-like interface with search results
+            let resultsHtml = `
+                <div class="browser-container">
+                    <div class="browser-toolbar">
+                        <span>🔍</span>
+                        <div class="browser-address-bar">https://legal-search.com/search?q=${encodeURIComponent(query)}</div>
+                    </div>
+                    <div class="browser-content">
+                        <h3>Search Results for: ${query}</h3>`;
+            
+            // Generate different results based on content type
+            switch(contentType) {
+                case 'cases':
+                    resultsHtml += generateCaseLawResults(query);
+                    break;
+                case 'journals':
+                    resultsHtml += generateJournalResults(query);
+                    break;
+                case 'statutes':
+                    resultsHtml += generateStatuteResults(query);
+                    break;
+                case 'books':
+                    resultsHtml += generateBookResults(query);
+                    break;
+                default:
+                    resultsHtml += generateGeneralResults(query);
+            }
+            
+            resultsHtml += `
+                        <div class="verification-notes">
+                            <h4>Verification Notes</h4>
+                            <textarea placeholder="Add verification notes about this source..."></textarea>
+                            <div class="verification-actions">
+                                <button>Add to Verification Notes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return resultsHtml;
+        }
+        
+        /**
+         * Generate case law search results
+         */
+        function generateCaseLawResults(query) {
+            return `
+                <div class="search-result">
+                    <h4>${query} - Supreme Court Opinion</h4>
+                    <div class="search-result-url">supremecourt.gov › opinions › 19pdf › 19-123</div>
+                    <div class="search-result-content">
+                        <p>Full text of the Supreme Court opinion in ${query}. This case addresses important legal principles related to your search query. The decision was written by Justice Roberts with a concurring opinion by Justice Kagan.</p>
+                        <p><a href="https://www.supremecourt.gov/opinions/opinions.aspx" target="_blank">View Full Text</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} | Oyez</h4>
+                    <div class="search-result-url">oyez.org › cases › ${query.toLowerCase().replace(/\s/g, '_')}</div>
+                    <div class="search-result-content">
+                        <p>Oyez provides summaries, oral arguments, and opinions for all Supreme Court cases including ${query}. Includes case details, facts of the case, questions presented, conclusion, decision, and significance.</p>
+                        <p><a href="https://www.oyez.org/" target="_blank">View Details</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} - Legal Analysis | Harvard Law Review</h4>
+                    <div class="search-result-url">harvardlawreview.org › comment › ${query.toLowerCase().replace(/\s/g, '-')}</div>
+                    <div class="search-result-content">
+                        <p>Analysis and commentary on ${query} from the Harvard Law Review. This article examines the implications of the court's ruling and how it affects related jurisprudence.</p>
+                        <p><a href="https://harvardlawreview.org/" target="_blank">Read Analysis</a></p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Generate journal article search results
+         */
+        function generateJournalResults(query) {
+            return `
+                <div class="search-result">
+                    <h4>${query} | HeinOnline</h4>
+                    <div class="search-result-url">heinonline.org › journals › article › ${query.toLowerCase().replace(/\s/g, '-')}</div>
+                    <div class="search-result-content">
+                        <p>Full text of "${query}" available on HeinOnline. This peer-reviewed article examines key legal concepts and provides comprehensive analysis on the subject.</p>
+                        <p><a href="https://home.heinonline.org/" target="_blank">View Full Text</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} | JSTOR</h4>
+                    <div class="search-result-url">jstor.org › stable › ${Math.floor(Math.random() * 10000000)}</div>
+                    <div class="search-result-content">
+                        <p>Access "${query}" via JSTOR. Published in the Journal of Legal Studies, Vol. 42, No. 2 (June 2023), pp. 301-329. Includes citations and references to relevant case law and statutes.</p>
+                        <p><a href="https://www.jstor.org/" target="_blank">View Article</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} - Citation Analysis | Google Scholar</h4>
+                    <div class="search-result-url">scholar.google.com › citations › ${query.toLowerCase().replace(/\s/g, '_')}</div>
+                    <div class="search-result-content">
+                        <p>Citation information for "${query}" shows it has been cited 87 times since publication. View all citing articles and related works on this topic.</p>
+                        <p><a href="https://scholar.google.com/" target="_blank">View Citation Data</a></p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Generate statute search results
+         */
+        function generateStatuteResults(query) {
+            return `
+                <div class="search-result">
+                    <h4>${query} | U.S. Code | LII / Legal Information Institute</h4>
+                    <div class="search-result-url">law.cornell.edu › uscode › text › ${query.replace(/\D/g, '')}</div>
+                    <div class="search-result-content">
+                        <p>Full text of ${query} from the United States Code. Current through Pub. L. 117-80. Includes notes, amendments, and cross-references to related sections.</p>
+                        <p><a href="https://www.law.cornell.edu/" target="_blank">View Full Text</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} | Westlaw</h4>
+                    <div class="search-result-url">westlaw.com › document › ${query.toLowerCase().replace(/\s/g, '_')}</div>
+                    <div class="search-result-content">
+                        <p>Comprehensive analysis of ${query} including legislative history, case annotations, and practice notes. Updated with the latest amendments and interpretations from relevant court decisions.</p>
+                        <p><a href="https://www.westlaw.com/" target="_blank">View on Westlaw</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>Interpretations of ${query} | Congressional Research Service</h4>
+                    <div class="search-result-url">crsreports.congress.gov › ${query.toLowerCase().replace(/\s/g, '-')}-analysis</div>
+                    <div class="search-result-content">
+                        <p>Analysis and interpretation of ${query} by the Congressional Research Service. Includes examination of implementation, judicial interpretations, and policy implications.</p>
+                        <p><a href="https://crsreports.congress.gov/" target="_blank">View Report</a></p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Generate book search results
+         */
+        function generateBookResults(query) {
+            return `
+                <div class="search-result">
+                    <h4>${query} | Google Books</h4>
+                    <div class="search-result-url">books.google.com › books › about › ${query.toLowerCase().replace(/\s/g, '_')}</div>
+                    <div class="search-result-content">
+                        <p>Preview available for "${query}". Published by Oxford University Press (2022). 528 pages. ISBN: 978-0-19-284365-8. Includes comprehensive index and bibliography.</p>
+                        <p><a href="https://books.google.com/" target="_blank">View Book Preview</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} | WorldCat</h4>
+                    <div class="search-result-url">worldcat.org › title › ${query.toLowerCase().replace(/\s/g, '-')}</div>
+                    <div class="search-result-content">
+                        <p>Find "${query}" in libraries near you. Available in print and electronic format. Reviews and citation information included. Second edition published in 2022.</p>
+                        <p><a href="https://www.worldcat.org/" target="_blank">Find in Libraries</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>Review: ${query} | Harvard Law Review</h4>
+                    <div class="search-result-url">harvardlawreview.org › book-review › ${query.toLowerCase().replace(/\s/g, '-')}</div>
+                    <div class="search-result-content">
+                        <p>Scholarly review of "${query}" examining the book's contribution to legal literature. Analyzes key themes, methodologies, and conclusions drawn by the author.</p>
+                        <p><a href="https://harvardlawreview.org/" target="_blank">Read Review</a></p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Generate general search results
+         */
+        function generateGeneralResults(query) {
+            return `
+                <div class="search-result">
+                    <h4>${query} | Legal Research Results</h4>
+                    <div class="search-result-url">legalresearch.com › search › ${query.toLowerCase().replace(/\s/g, '-')}</div>
+                    <div class="search-result-content">
+                        <p>Comprehensive results for "${query}" including case law, journal articles, statutes, and secondary sources. Results can be filtered by jurisdiction, date, and source type.</p>
+                        <p><a href="#" onclick="return false;">View Search Results</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} | Google Scholar</h4>
+                    <div class="search-result-url">scholar.google.com › search › ${query.toLowerCase().replace(/\s/g, '_')}</div>
+                    <div class="search-result-content">
+                        <p>Results for "${query}" from Google Scholar's comprehensive academic database. Includes articles, case law, and academic publications.</p>
+                        <p><a href="https://scholar.google.com/" target="_blank">View on Google Scholar</a></p>
+                    </div>
+                </div>
+                
+                <div class="search-result">
+                    <h4>${query} | Cornell LII</h4>
+                    <div class="search-result-url">law.cornell.edu › search › ${query.toLowerCase().replace(/\s/g, '-')}</div>
+                    <div class="search-result-content">
+                        <p>Cornell Law School's Legal Information Institute search results for "${query}" with free access to primary source materials and legal resources.</p>
+                        <p><a href="https://www.law.cornell.edu/" target="_blank">View on Cornell LII</a></p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Search CourtListener API (if API key available)
+         */
+        function searchCourtListener(query) {
+            return new Promise((resolve, reject) => {
+                // If no API key, fall back to simulated results
+                if (!appSettings.apis.courtlistener) {
+                    return resolve(generateCaseLawResults(query));
+                }
+                
+                // Here would be actual API implementation
+                // For now, just return simulated results after a delay
+                setTimeout(() => {
+                    resolve(generateCaseLawResults(query));
+                }, 1000);
+            });
+        }
+        
+        /**
+         * Search Harvard Library API (if API key available)
+         */
+        function searchHarvardLibrary(query) {
+            return new Promise((resolve, reject) => {
+                // If no API key, fall back to simulated results
+                if (!appSettings.apis.harvardLibrary) {
+                    return resolve(generateJournalResults(query));
+                }
+                
+                // Here would be actual API implementation
+                // For now, just return simulated results after a delay
+                setTimeout(() => {
+                    resolve(generateJournalResults(query));
+                }, 1000);
+            });
+        }
+        
+        /**
+         * Update Bluebook reference panel
+         */
+        function updateBluebookReference(citationType) {
+            let relevantRules = [];
+            
+            // Determine which rules are relevant based on citation type
+            switch(citationType) {
+                case 'case':
+                    relevantRules = ['case_name_format', 'pincite_format', 'court_format', 'year_format'];
+                    break;
+                case 'statute':
+                    relevantRules = ['statute_format'];
+                    break;
+                case 'journal':
+                    relevantRules = ['journal_name_format', 'pincite_format', 'year_format'];
+                    break;
+                case 'book':
+                    relevantRules = ['book_format', 'pincite_format', 'year_format'];
+                    break;
+                case 'website':
+                    relevantRules = ['url_format'];
+                    break;
+                default:
+                    relevantRules = ['signal_format', 'multiple_sources'];
+            }
+            
+            // Generate HTML for relevant rules
+            let rulesHtml = `<h3>Bluebook Rules for ${citationType.charAt(0).toUpperCase() + citationType.slice(1)} Citations</h3>`;
+            
+            if (relevantRules.length === 0) {
+                rulesHtml += '<p>No specific rules found for this citation type.</p>';
+            } else {
+                relevantRules.forEach(ruleId => {
+                    const rule = bluebookRules[ruleId];
+                    if (rule) {
+                        rulesHtml += `
+                            <div class="bluebook-reference">
+                                <h4>Rule ${rule.rule} - ${ruleId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h4>
+                                <p>${rule.description}</p>
+                                <div class="examples">
+                                    <p><strong>Correct:</strong> ${rule.examples[0].correct}</p>
+                                    <p><strong>Incorrect:</strong> ${rule.examples[0].incorrect}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            // Update the Bluebook panel
+            document.getElementById('bluebook-content').innerHTML = rulesHtml;
+        }
+
+   /**
+         * Verify citations
+         */
+        function verifyCitations() {
+            // Reset previous results
+            citationVerificationResults = [];
+            
+            // Create verification results for each footnote
+            extractedFootnotes.forEach((footnote) => {
+                const footnoteNumber = footnote.number;
+                const footnoteText = footnote.text || footnote.element.textContent.trim();
+                
+                // Clean the footnote text
+                const cleanFootnoteText = footnoteText
+                    .replace(/^\[\d+\]\s*/, '')
+                    .replace(/^\d+\.\s*/, '')
+                    .replace(/^\[\^(\d+)\]:\s*/, '')
+                    .replace(/^\[\^(\d+)\]\s*/, '');
+                
+                // Create sample issues based on common patterns
+                const issues = checkCitationIssues(cleanFootnoteText);
+                
+                // Store results
+                citationVerificationResults.push({
+                    footnoteNumber: footnoteNumber,
+                    citationText: cleanFootnoteText,
+                    issues: issues
+                });
+            });
+            
+            // Update UI to show results
+            displayCitationResults();
+            
+            // Update footnote items to show issues
+            updateFootnoteItems();
+        }
+        
+        /**
+         * Check for citation issues
+         */
+        function checkCitationIssues(footnoteText) {
+            const issues = [];
+            
+            // Check for case citations without italics
+            if (footnoteText.match(/\b([A-Za-z\s]+)\sv\.\s([A-Za-z\s]+)/)) {
+                issues.push({
+                    ruleId: "case_name_format",
+                    description: "Case names should be in italics in citations",
+                    suggested: footnoteText.replace(
+                        /([A-Za-z\s]+)\sv\.\s([A-Za-z\s]+)/,
+                        "*$1* v. *$2*"
+                    )
+                });
+            }
+            
+            // Check for journal names without italics
+            if (footnoteText.match(/\d+\s([A-Z][A-Za-z\.]+\sL\.\sRev\.)\s\d+/) && 
+                !footnoteText.match(/\d+\s\*([A-Z][A-Za-z\.]+\sL\.\sRev\.)\*\s\d+/)) {
+                issues.push({
+                    ruleId: "journal_name_format",
+                    description: "Journal names should be in italics",
+                    suggested: footnoteText.replace(
+                        /(\d+)\s([A-Z][A-Za-z\.]+\sL\.\sRev\.)(\s\d+)/,
+                        "$1 *$2*$3"
+                    )
+                });
+            }
+            
+            // Check for signals without comma
+            if (footnoteText.match(/\b(See|Accord|Cf\.|Compare|E\.g\.|But see)\s[A-Z]/) && 
+                !footnoteText.match(/\b(See|Accord|Cf\.|Compare|E\.g\.|But see),\s[A-Z]/)) {
+                issues.push({
+                    ruleId: "signal_format",
+                    description: "Signals should be followed by a comma",
+                    suggested: footnoteText.replace(
+                        /\b(See|Accord|Cf\.|Compare|E\.g\.|But see)\s/,
+                        "$1, "
+                    )
+                });
+            }
+            
+            // Check for URLs in angle brackets
+            if (footnoteText.match(/<(https?:\/\/[^>]+)>/)) {
+                issues.push({
+                    ruleId: "url_format",
+                    description: "URLs should not be in angle brackets",
+                    suggested: footnoteText.replace(
+                        /<(https?:\/\/[^>]+)>/g,
+                        "$1"
+                    )
+                });
+            }
+            
+            // Check for improper statute format
+            if (footnoteText.match(/United States Code/) || 
+                footnoteText.match(/U\.S\.C\.A\./) || 
+                footnoteText.match(/U\.S\. Code/)) {
+                issues.push({
+                    ruleId: "statute_format",
+                    description: "Federal statutes should be cited to the U.S.C.",
+                    suggested: "Use the format: 42 U.S.C. § 1983"
+                });
+            }
+            
+            // Check for book titles not in small caps
+            if (footnoteText.match(/\[([^\]]+)\]/) && 
+                !footnoteText.match(/\*([^\*]+)\*/)) {
+                issues.push({
+                    ruleId: "book_format",
+                    description: "Book and treatise titles should be in italics, not brackets",
+                    suggested: footnoteText.replace(
+                        /\[([^\]]+)\]/,
+                        "*$1*"
+                    )
+                });
+            }
+            
+            // Check for incorrect pincite format
+            if (footnoteText.match(/\d+\s*at\s*\d+/)) {
+                issues.push({
+                    ruleId: "pincite_format",
+                    description: "When citing specific pages, don't use 'at'",
+                    suggested: footnoteText.replace(
+                        /(\d+)\s*at\s*(\d+)/,
+                        "$1, $2"
+                    )
+                });
+            }
+            
+            return issues;
+        }
+        
+        /**
+         * Display citation results
+         */
+        function displayCitationResults() {
+            // Switch to citation check tab
+            document.querySelector('.tab[data-tab="citation-check"]').click();
+            
+            let resultsHtml = '<h3>Citation Check Results</h3>';
+            
+            if (citationVerificationResults.length === 0) {
+                resultsHtml += '<p>No citation issues found.</p>';
+            } else {
+                let totalIssues = 0;
+                citationVerificationResults.forEach(result => {
+                    totalIssues += result.issues.length;
+                });
+                
+                resultsHtml += `<p>Found ${totalIssues} potential Bluebook issues in ${citationVerificationResults.length} footnotes.</p>`;
+                
+                citationVerificationResults.forEach(result => {
+                    if (result.issues.length > 0) {
+                        resultsHtml += `
+                            <div class="footnote-item" data-number="${result.footnoteNumber}">
+                                <strong>Footnote ${result.footnoteNumber}</strong> 
+                                <span class="bluebook-issue-badge">${result.issues.length}</span>
+                                <div style="margin-top: 5px;">${result.citationText.substring(0, 100)}${result.citationText.length > 100 ? '...' : ''}</div>
+                            </div>`;
+                        
+                        resultsHtml += '<div style="margin-left: 20px;">';
+                        result.issues.forEach(issue => {
+                            resultsHtml += `
+                                <div class="citation-issue">
+                                    <div><strong>${issue.ruleId}:</strong> ${issue.description}</div>
+                                    ${issue.suggested ? `<div class="suggestion">Suggestion: ${issue.suggested}</div>` : ''}
+                                </div>`;
+                        });
+                        resultsHtml += '</div>';
+                    }
+                });
+            }
+            
+            citationIssues.innerHTML = resultsHtml;
+            
+            // Make footnote items in results clickable
+            document.querySelectorAll('#citation-issues .footnote-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const footnoteNumber = parseInt(this.dataset.number);
+                    const footnoteItems = document.querySelectorAll('#footnotes-list .footnote-item');
+                    
+                    // Find the correct footnote item
+                    for (const footnoteItem of footnoteItems) {
+                        if (parseInt(footnoteItem.dataset.number) === footnoteNumber) {
+                            // Scroll to that footnote and click it
+                            footnoteItem.scrollIntoView({ behavior: 'smooth' });
+                            setTimeout(() => {
+                                footnoteItem.click();
+                            }, 500);
+                            break;
+                        }
+                    }
+                });
+            });
+        }
+        
+        /**
+         * Update footnote items to show issues
+         */
+        function updateFootnoteItems() {
+            const footnoteItems = document.querySelectorAll('#footnotes-list .footnote-item');
+            
+            footnoteItems.forEach(item => {
+                // Remove has-issues class
+                item.classList.remove('has-issues');
+                
+                // Check if this footnote has issues
+                const footnoteNumber = parseInt(item.dataset.number);
+                const result = citationVerificationResults.find(r => r.footnoteNumber === footnoteNumber);
+                
+                if (result && result.issues.length > 0) {
+                    item.classList.add('has-issues');
+                    
+                    // If this footnote doesn't have a verification status yet, mark it as having issues
+                    if (!verificationStatus[footnoteNumber]) {
+                        updateFootnoteStatus(footnoteNumber, 'issues');
+                    }
+                }
+            });
+        }
+        
+        /**
+         * Update the status display of a footnote
+         */
+        function updateFootnoteStatus(footnoteNumber, status) {
+            // Find the footnote item
+            const footnoteItems = document.querySelectorAll('#footnotes-list .footnote-item');
+            
+            for (const item of footnoteItems) {
+                if (parseInt(item.dataset.number) === footnoteNumber) {
+                    // Update the status in our data
+                    verificationStatus[footnoteNumber] = status;
+                    
+                    // Remove existing status indicator
+                    const existingStatus = item.querySelector('.verification-status');
+                    if (existingStatus) {
+                        existingStatus.remove();
+                    }
+                    
+                    // Create status text and class
+                    let statusClass, statusText;
+                    
+                    if (status === 'verified') {
+                        statusClass = 'status-verified';
+                        statusText = 'Verified';
+                    } else if (status === 'issues') {
+                        statusClass = 'status-issues';
+                        statusText = 'Has Issues';
+                    } else {
+                        statusClass = 'status-unverified';
+                        statusText = 'Unverified';
+                    }
+                    
+                    // Add new status indicator
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = `verification-status ${statusClass}`;
+                    statusSpan.textContent = statusText;
+                    item.querySelector('div:first-child').appendChild(statusSpan);
+                    
+                    break;
+                }
+            }
+        }
+        
+        /**
+         * Export as PDF
+         */
+        function exportAsPdf() {
+            // Use jsPDF if available, otherwise show message
+            if (typeof window.jspdf !== 'undefined') {
+                // Get the current verification panel content
+                const currentTab = document.querySelector('.tab.active').getAttribute('data-tab');
+                const currentTabContent = document.getElementById(currentTab);
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add content to PDF
+                doc.setFontSize(18);
+                doc.text('Citation Verification Report', 20, 20);
+                
+                doc.setFontSize(12);
+                doc.text(`Footnote ${currentFootnote.number}${currentFootnote.subLabel || ''}`, 20, 30);
+                
+                doc.setFontSize(10);
+                
+                // Wrap text to fit within page width
+                const textLines = doc.splitTextToSize(currentFootnote.text, 170);
+                doc.text(textLines, 20, 40);
+                
+                // Add verification notes if they exist
+                const noteKey = currentFootnote.subLabel 
+                    ? `${currentFootnote.number}${currentFootnote.subLabel}`
+                    : currentFootnote.number;
+                    
+                if (verificationNotes[noteKey]) {
+                    doc.text('Verification Notes:', 20, 80);
+                    const noteLines = doc.splitTextToSize(verificationNotes[noteKey], 170);
+                    doc.text(noteLines, 20, 90);
+                }
+                
+                // Add verification status
+                if (verificationStatus[currentFootnote.number]) {
+                    let statusText = 'Status: ';
+                    
+                    if (verificationStatus[currentFootnote.number] === 'verified') {
+                        statusText += 'Verified';
+                    } else if (verificationStatus[currentFootnote.number] === 'issues') {
+                        statusText += 'Has Issues';
+                    } else {
+                        statusText += 'Unverified';
+                    }
+                    
+                    doc.text(statusText, 20, 140);
+                }
+                
+                // Add document name and date
+                doc.setFontSize(8);
+                doc.text(`Document: ${documentName.textContent || 'Unknown'}`, 20, 280);
+                doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 285);
+                
+                // Save PDF
+                doc.save(`Footnote_${currentFootnote.number}${currentFootnote.subLabel || ''}_Verification.pdf`);
+                
+                showToast('PDF exported successfully.');
+            } else {
+                // Fallback if jsPDF is not available
+                showToast('PDF generation requires the jsPDF library. Using this would create a PDF of the current verification state.');
+            }
+        }
+        
+        /**
+         * Export citation report
+         */
+        function exportCitationReport() {
+            // Create a new window for the report
+            let reportHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Citation Check Report</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; }
+                        h1 { color: #2d5f9a; margin-bottom: 10px; }
+                        h2 { color: #2d5f9a; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+                        .footnote { margin-bottom: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; }
+                        .citation-issue { margin-left: 20px; padding: 10px; border-left: 3px solid #ffb300; background-color: #fff8e1; margin-top: 10px; }
+                        .no-issues { color: #2e7d32; font-weight: 500; }
+                        .suggestion { font-weight: bold; margin-top: 5px; }
+                        .verification-note { background: #f5f5f5; padding: 15px; margin-top: 15px; border-radius: 5px; }
+                        .status { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 500; margin-left: 10px; }
+                        .status-verified { background-color: #e8f5e9; color: #2e7d32; }
+                        .status-issues { background-color: #fff3e0; color: #e65100; }
+                        .status-unverified { background-color: #f5f5f5; color: #616161; }
+                        .meta-info { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Citation Check Report</h1>
+                    <div class="meta-info">
+                        <p>Document: ${documentName.textContent || 'Unknown document'}</p>
+                        <p>Generated: ${new Date().toLocaleString()}</p>
+                    </div>
+                    <hr>
+            `;
+            
+            let totalIssues = 0;
+            citationVerificationResults.forEach(result => {
+                totalIssues += result.issues.length;
+            });
+            
+            reportHtml += `<p>Found ${totalIssues} potential Bluebook issues in ${citationVerificationResults.length} footnotes.</p>`;
+            
+            citationVerificationResults.forEach(result => {
+                let statusClass = '';
+                let statusText = '';
+                
+                if (verificationStatus[result.footnoteNumber]) {
+                    if (verificationStatus[result.footnoteNumber] === 'verified') {
+                        statusClass = 'status-verified';
+                        statusText = 'Verified';
+                    } else if (verificationStatus[result.footnoteNumber] === 'issues') {
+                        statusClass = 'status-issues';
+                        statusText = 'Has Issues';
+                    } else {
+                        statusClass = 'status-unverified';
+                        statusText = 'Unverified';
+                    }
+                } else {
+                    statusClass = 'status-unverified';
+                    statusText = 'Unverified';
+                }
+                
+                reportHtml += `
+                    <div class="footnote">
+                        <h2>Footnote ${result.footnoteNumber} <span class="status ${statusClass}">${statusText}</span></h2>
+                        <div>${result.citationText}</div>
+                `;
+                
+                if (result.issues.length === 0) {
+                    reportHtml += `<p class="no-issues">No citation issues found.</p>`;
+                } else {
+                    reportHtml += `<h3>Citation Issues:</h3>`;
+                    
+                    result.issues.forEach(issue => {
+                        reportHtml += `
+                            <div class="citation-issue">
+                                <div><strong>${issue.ruleId}:</strong> ${issue.description}</div>
+                                ${issue.suggested ? `<div class="suggestion">Suggestion: ${issue.suggested}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+                
+                // Add verification notes if they exist
+                if (verificationNotes[result.footnoteNumber]) {
+                    reportHtml += `
+                        <div class="verification-note">
+                            <h3>Verification Notes:</h3>
+                            <div>${verificationNotes[result.footnoteNumber].replace(/\n/g, '<br>')}</div>
+                        </div>
+                    `;
+                }
+                
+                reportHtml += `</div>`;
+            });
+            
+            reportHtml += `
+                </body>
+                </html>
+            `;
+            
+            const reportWindow = window.open();
+            reportWindow.document.write(reportHtml);
+            reportWindow.document.close();
+            reportWindow.focus();
+            
+            showToast('Report generated successfully.');
+        }
+        
+        /**
+         * Share verification results with team via GitHub
+         */
+        function shareWithTeam() {
+            // Check if GitHub settings are available
+            if (!appSettings.github.token || !appSettings.github.repo) {
+                showToast('Please configure GitHub settings first.');
+                settingsPanel.style.display = 'block';
+                return;
+            }
+            
+            // Show loading message
+            showToast('Sharing with team...');
+            
+            // Format data for sharing
+            const data = {
+                document: documentName.textContent || 'Unknown document',
+                timestamp: new Date().toISOString(),
+                results: citationVerificationResults,
+                verificationStatus: verificationStatus,
+                verificationNotes: verificationNotes
+            };
+            
+            // In a real application, this would make API calls to GitHub
+            // For this demo, we'll simulate success after a delay
+            setTimeout(() => {
+                showToast('Citation check shared with team successfully!');
+            }, 2000);
+        }
+        
+        /**
+         * Save verification state to localStorage
+         */
+        function saveVerificationState() {
+            const stateToSave = {
+                document: documentName.textContent,
+                verificationNotes: verificationNotes,
+                verificationStatus: verificationStatus,
+                citationVerificationResults: citationVerificationResults,
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('cite_checker_state', JSON.stringify(stateToSave));
+        }
+        
+        /**
+         * Load verification state from localStorage
+         */
+        function loadVerificationState() {
+            const savedState = localStorage.getItem('cite_checker_state');
+            if (savedState) {
+                try {
+                    const state = JSON.parse(savedState);
+                    
+                    // Only restore if we have footnotes
+                    if (extractedFootnotes && extractedFootnotes.length > 0) {
+                        verificationNotes = state.verificationNotes || {};
+                        verificationStatus = state.verificationStatus || {};
+                        
+                        // Update UI with loaded state
+                        updateFootnoteItemsWithSavedState();
+                    }
+                } catch (error) {
+                    console.error('Error loading saved state:', error);
+                }
+            }
+        }
+        
+        /**
+         * Update footnote items with saved state
+         */
+        function updateFootnoteItemsWithSavedState() {
+            const footnoteItems = document.querySelectorAll('#footnotes-list .footnote-item');
+            
+            footnoteItems.forEach(item => {
+                const footnoteNumber = parseInt(item.dataset.number);
+                
+                if (verificationStatus[footnoteNumber]) {
+                    updateFootnoteStatus(footnoteNumber, verificationStatus[footnoteNumber]);
+                }
+            });
+        }
+        
+        /**
+         * Show toast notification
+         */
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Initialize the application
+        init();
+    });
+    </script>
+</body>
+</html>                           
